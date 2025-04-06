@@ -49,6 +49,32 @@
             <input type="hidden" name="num_passengers" id="num_passengers" value="1">
             <input type="hidden" name="seat_type" id="selected_seat_type" value="pho_thong">
             <input type="hidden" id="base-price" value="{{ $flight->gia_ve_co_ban }}">
+            
+            @php
+                $hasDiscount = false;
+                $discountPercent = 0;
+                $discountedPrice = $flight->gia_ve_co_ban;
+                
+                if ($flight->ngay_gio_khoi_hanh) {
+                    $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                    foreach ($flight->getActivePromotions() as $promo) {
+                        $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                        $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                        if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                            $hasDiscount = true;
+                            $discountPercent = $flight->getHighestDiscount();
+                            $discountedPrice = $flight->getDiscountedPrice();
+                            break;
+                        }
+                    }
+                }
+                
+                $discountedSpecialPrice = $discountedPrice * 1.4;
+                $discountedBusinessPrice = $discountedPrice * 2.2;
+            @endphp
+            
+            <input type="hidden" id="discount-percent" value="{{ $discountPercent }}">
+            <input type="hidden" id="discounted-price" value="{{ $discountedPrice }}">
 
             <div class="mb-6">
                 <div class="flex items-center justify-between mb-4">
@@ -66,9 +92,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="border rounded-lg p-4 hover:shadow-md transition cursor-pointer">
                         <div class="font-semibold text-lg mb-2">Phổ thông</div>
-                        <div class="text-teal-700 font-bold text-xl mb-2">
-                            {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
-                        </div>
+                        @if($hasDiscount)
+                            <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mb-1">-{{ $discountPercent }}%</div>
+                            <div class="text-gray-500 line-through text-sm">
+                                {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-red-600 font-bold text-xl mb-2">
+                                {{ number_format($discountedPrice, 0, ',', '.') }} VND
+                            </div>
+                        @else
+                            <div class="text-teal-700 font-bold text-xl mb-2">
+                                {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
+                            </div>
+                        @endif
                         <div class="text-sm text-gray-600">Giá cho 1 hành khách</div>
                         <div class="mt-4">
                             <input type="radio" name="seat_type" id="seat_pho_thong" value="pho_thong" class="hidden seat-radio" checked>
@@ -80,9 +116,19 @@
 
                     <div class="border rounded-lg p-4 hover:shadow-md transition cursor-pointer">
                         <div class="font-semibold text-lg mb-2">Phổ thông đặc biệt</div>
-                        <div class="text-teal-700 font-bold text-xl mb-2">
-                            {{ number_format($flight->gia_ve_co_ban * 1.4, 0, ',', '.') }} VND
-                        </div>
+                        @if($hasDiscount)
+                            <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mb-1">-{{ $discountPercent }}%</div>
+                            <div class="text-gray-500 line-through text-sm">
+                                {{ number_format($flight->gia_ve_co_ban * 1.4, 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-red-600 font-bold text-xl mb-2">
+                                {{ number_format($discountedSpecialPrice, 0, ',', '.') }} VND
+                            </div>
+                        @else
+                            <div class="text-teal-700 font-bold text-xl mb-2">
+                                {{ number_format($flight->gia_ve_co_ban * 1.4, 0, ',', '.') }} VND
+                            </div>
+                        @endif
                         <div class="text-sm text-gray-600">Giá cho 1 hành khách</div>
                         <div class="mt-4">
                             <input type="radio" name="seat_type" id="seat_pho_thong_dac_biet" value="pho_thong_dac_biet" class="hidden seat-radio">
@@ -94,9 +140,19 @@
 
                     <div class="border rounded-lg p-4 hover:shadow-md transition cursor-pointer">
                         <div class="font-semibold text-lg mb-2">Thương gia</div>
-                        <div class="text-teal-700 font-bold text-xl mb-2">
-                            {{ number_format($flight->gia_ve_co_ban * 2.2, 0, ',', '.') }} VND
-                        </div>
+                        @if($hasDiscount)
+                            <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mb-1">-{{ $discountPercent }}%</div>
+                            <div class="text-gray-500 line-through text-sm">
+                                {{ number_format($flight->gia_ve_co_ban * 2.2, 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-red-600 font-bold text-xl mb-2">
+                                {{ number_format($discountedBusinessPrice, 0, ',', '.') }} VND
+                            </div>
+                        @else
+                            <div class="text-teal-700 font-bold text-xl mb-2">
+                                {{ number_format($flight->gia_ve_co_ban * 2.2, 0, ',', '.') }} VND
+                            </div>
+                        @endif
                         <div class="text-sm text-gray-600">Giá cho 1 hành khách</div>
                         <div class="mt-4">
                             <input type="radio" name="seat_type" id="seat_thuong_gia" value="thuong_gia" class="hidden seat-radio">
@@ -112,7 +168,11 @@
                 <div class="mb-4">
                     <div class="text-gray-600">Tổng tiền cho <span id="total-passengers">1</span> hành khách:</div>
                     <div class="text-2xl font-bold text-teal-700" id="total-price">
-                        {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
+                        @if($hasDiscount)
+                            {{ number_format($discountedPrice, 0, ',', '.') }} VND
+                        @else
+                            {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
+                        @endif
                     </div>
                 </div>
 
@@ -132,6 +192,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalDisplay = document.getElementById('total-passengers');
     const totalPriceDisplay = document.getElementById('total-price');
     const basePrice = parseInt(document.getElementById('base-price').value);
+    const discountPercent = parseInt(document.getElementById('discount-percent').value) || 0;
+    const discountedBasePrice = parseInt(document.getElementById('discounted-price').value) || basePrice;
     const numPassengersInput = document.getElementById('num_passengers');
     const selectedSeatTypeInput = document.getElementById('selected_seat_type');
 
@@ -147,7 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
             multiplier = 2.2;
         }
 
-        const total = basePrice * multiplier * numPassengers;
+        let total;
+        if (discountPercent > 0) {
+            total = discountedBasePrice * multiplier * numPassengers;
+        } else {
+            total = basePrice * multiplier * numPassengers;
+        }
+
         totalPriceDisplay.textContent = total.toLocaleString('vi-VN') + ' VND';
         
         // Cập nhật các input hidden

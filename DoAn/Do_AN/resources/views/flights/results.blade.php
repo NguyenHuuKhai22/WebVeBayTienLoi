@@ -27,6 +27,25 @@
         @if($flights->count() > 0)
             <div class="grid grid-cols-1 gap-4">
                 @foreach($flights as $flight)
+                    @php
+                        $hasDiscount = false;
+                        $discountedPrice = $flight->gia_ve_co_ban;
+                        $discountPercent = 0;
+                        
+                        if ($flight->ngay_gio_khoi_hanh) {
+                            $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                            foreach ($flight->getActivePromotions() as $promo) {
+                                $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                                $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                                if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                                    $hasDiscount = true;
+                                    $discountPercent = $flight->getHighestDiscount();
+                                    $discountedPrice = $flight->getDiscountedPrice();
+                                    break;
+                                }
+                            }
+                        }
+                    @endphp
                     <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between">
                         <div class="mb-4 md:mb-0">
                             <div class="flex items-center mb-2">
@@ -61,7 +80,13 @@
                         </div>
                         
                         <div class="mb-4 md:mb-0 text-center">
-                            <div class="font-bold text-teal-700 text-xl">{{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND</div>
+                            @if($hasDiscount)
+                                <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mb-1">-{{ $discountPercent }}%</div>
+                                <div class="font-medium text-gray-500 line-through text-sm">{{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND</div>
+                                <div class="font-bold text-red-600 text-xl">{{ number_format($discountedPrice, 0, ',', '.') }} VND</div>
+                            @else
+                                <div class="font-bold text-teal-700 text-xl">{{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND</div>
+                            @endif
                             <div class="text-sm text-gray-600">{{ $flight->so_ghe_trong }} chỗ còn trống</div>
                         </div>
                         

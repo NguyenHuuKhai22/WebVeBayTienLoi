@@ -31,4 +31,30 @@ class ChuyenBay extends Model
     {
         return $this->hasMany(VeMayBay::class, 'id_chuyen_bay', 'id_chuyen_bay');
     }
+
+    public function promotions()
+    {
+        return $this->belongsToMany(Promotion::class, 'chuyen_bay_khuyen_mai', 'id_chuyen_bay', 'id_khuyen_mai')
+                    ->withTimestamps();
+    }
+
+    public function getActivePromotions()
+    {
+        return $this->promotions()->where('trang_thai', true)
+            ->where('thoi_gian_bat_dau', '<=', now())
+            ->where('thoi_gian_ket_thuc', '>=', now())
+            ->get();
+    }
+
+    public function getHighestDiscount()
+    {
+        $activePromotions = $this->getActivePromotions();
+        return $activePromotions->max('phan_tram_giam') ?? 0;
+    }
+
+    public function getDiscountedPrice()
+    {
+        $highestDiscount = $this->getHighestDiscount();
+        return $this->gia_ve_co_ban * (1 - ($highestDiscount / 100));
+    }
 }

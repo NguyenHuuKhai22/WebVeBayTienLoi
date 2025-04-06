@@ -67,12 +67,22 @@
         </li>
         <li class="nav-item">
             <a href="#" class="nav-link" data-toggle="submenu">
-                <i class="fas fa-chart-bar"></i>
-                <span class="nav-text">Thống kê</span>
+                <i class="fas fa-ticket-alt"></i>
+                <span class="nav-text">Quản lý vé</span>
             </a>
             <ul class="submenu">
-                <li><a href="#" class="nav-link">Báo cáo doanh thu</a></li>
-                <li><a href="#" class="nav-link">Phân tích xu hướng</a></li>
+                <li><a href="{{ route('admin.ve-may-bay.index') }}" class="nav-link {{ request()->routeIs('admin.ve-may-bay.index') ? 'active' : '' }}">Danh sách vé</a></li>
+                <li><a href="{{ route('admin.thanh-toan.index') }}" class="nav-link {{ request()->routeIs('admin.thanh-toan.index') ? 'active' : '' }}">Quản lý thanh toán</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" data-toggle="submenu">
+                <i class="fas fa-percent"></i>
+                <span class="nav-text">Quản lý khuyến mãi</span>
+            </a>
+            <ul class="submenu">
+                <li><a href="{{ route('admin.promotions.index') }}" class="nav-link {{ request()->routeIs('admin.promotions.index') ? 'active' : '' }}">Danh sách khuyến mãi</a></li>
+                <li><a href="{{ route('admin.promotions.create') }}" class="nav-link {{ request()->routeIs('admin.promotions.create') ? 'active' : '' }}">Thêm khuyến mãi</a></li>
             </ul>
         </li>
         <li class="nav-item">

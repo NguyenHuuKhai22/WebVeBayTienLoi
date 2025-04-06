@@ -112,6 +112,16 @@ class NguoiDungController extends Controller
     }
 
 
+    public function showTickets()
+    {
+        $nguoidung = Auth::user();
+
+        $veMayBay = \App\Models\VeMayBay::where('id_nguoi_dung', $nguoidung->id_nguoi_dung)
+                        ->where('trang_thai', 'da_thanh_toan')
+                        ->get();
+
+        return view('users.tickets', compact('nguoidung', 'veMayBay'));
+    }
 
 
 }

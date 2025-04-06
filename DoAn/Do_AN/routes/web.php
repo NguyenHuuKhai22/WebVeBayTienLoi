@@ -7,16 +7,21 @@ use App\Http\Controllers\FlightController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ChuyenBayAdminController;
+use App\Http\Controllers\CheckinController;
+use App\Http\Controllers\NguoiDungController;
+use App\Http\Controllers\SocialAuthController;
 Route::get('/', function () {
     return view('welcome');
 });
 
 use App\Http\Controllers\AdminController;
 use App\Http\Middleware\AdminMiddleware; // Import middleware
+use App\Http\Middleware\UserMiddleware; // Import middleware
 use App\Http\Controllers\VNPayController;
 use App\Http\Controllers\HangBayAdminController;
 use App\Http\Controllers\ZaloPayController;
 use App\Http\Controllers\MoMoPaymentController;
+use App\Http\Controllers\DashboardController; // Add this line
 use Illuminate\Support\Facades\Session;
 
 // Áp dụng middleware trực tiếp bằng class
@@ -50,14 +55,18 @@ Route::post('/admin/login', [AdminController::class, 'adminLogin'])->name('admin
 Route::post('/admin/logout', [AdminController::class, 'logout'])->name('admin.logout');
 // Áp dụng middleware trực tiếp bằng class
 
-Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])
-    ->middleware(AdminMiddleware::class) // Sử dụng class thay vì tên 'admin'
+Route::get('/admin/dashboard', [DashboardController::class, 'index'])
+    ->middleware(AdminMiddleware::class)
     ->name('admin.dashboard');
 
 Route::get('/admin/hangbay', [HangBayAdminController::class, 'index'])
     ->middleware(AdminMiddleware::class) // Sử dụng class thay vì tên 'admin'
     ->name('admin.hangbay.index');
 
+
+    Route::get('/vietnam-airlines', [VietnamAirlinesController::class, 'index'])->middleware(UserMiddleware::class);
+Route::get('/vietnam-airlines', [VietnamAirlinesController::class, 'index'])->middleware(UserMiddleware::class) // Sử dụng class thay vì tên 'admin'
+->name('vietnam-airlines');
 
 Route::prefix('admin')->group(function () {
 
@@ -110,8 +119,8 @@ Route::get('/nguoidung/{id}', [UserController::class, 'show'])->name('nguoidung.
 Route::get('/nguoidung/{id}/edit', [UserController::class, 'edit'])->name('nguoidung.edit');
 Route::post('/nguoidung/{id}/update', [UserController::class, 'update'])->name('nguoidung.update');
 Route::post('/nguoidung/{id}/doi-mat-khau', [UserController::class, 'updatePassword'])->name('nguoidung.updatePassword');
+Route::get('/user/tickets', [NguoiDungController::class, 'showTickets'])->name('user.tickets');
 //nguoi_dung_admin
-use App\Http\Controllers\NguoiDungController;
 
 Route::prefix('admin')->group(function () {
     Route::get('/nguoi-dung', [NguoiDungController::class, 'index'])->name('admin.nguoi_dung.index');
@@ -125,8 +134,7 @@ Route::prefix('admin')->group(function () {
 
 });
 
-Route::get('/vietnam-airlines', [VietnamAirlinesController::class, 'index']);
-Route::get('/vietnam-airlines', [VietnamAirlinesController::class, 'index'])->name('vietnam-airlines');
+
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ForgotPasswordController;
@@ -172,3 +180,79 @@ Route::get('/booking/select-passengers/{flight_id}', [BookingController::class, 
 Route::post('/booking/process-passengers', [BookingController::class, 'processPassengers'])->name('booking.process-passengers');
 Route::post('/booking/select-flight', [BookingController::class, 'selectFlight'])->name('booking.select-flight');
 Route::post('/booking/calculate-baggage', [BookingController::class, 'calculateBaggagePrice'])->name('booking.calculate-baggage');
+
+
+// Admin routes for ticket management
+Route::prefix('admin')->group(function () {
+    Route::get('/ve-may-bay', [App\Http\Controllers\VeMayBayAdminController::class, 'index'])
+        ->name('admin.ve-may-bay.index');
+    Route::get('/ve-may-bay/{id}/edit', [App\Http\Controllers\VeMayBayAdminController::class, 'edit'])
+        ->name('admin.ve-may-bay.edit');
+    Route::put('/ve-may-bay/{id}', [App\Http\Controllers\VeMayBayAdminController::class, 'update'])
+        ->name('admin.ve-may-bay.update');
+    Route::delete('/ve-may-bay/{id}', [App\Http\Controllers\VeMayBayAdminController::class, 'destroy'])
+        ->name('admin.ve-may-bay.destroy');
+});
+
+// Admin routes for payment management
+Route::prefix('admin')->group(function () {
+    Route::get('/thanh-toan', [App\Http\Controllers\ThanhToanAdminController::class, 'index'])
+        ->name('admin.thanh-toan.index');
+        Route::get('/thanh-toan/{id}/edit', [App\Http\Controllers\ThanhToanAdminController::class, 'edit'])
+        ->name('admin.thanh-toan.edit');
+    Route::get('/thanh-toan/{id}', [App\Http\Controllers\ThanhToanAdminController::class, 'show'])
+        ->name('admin.thanh-toan.show');
+    Route::put('/thanh-toan/{id}', [App\Http\Controllers\ThanhToanAdminController::class, 'update'])
+        ->name('admin.thanh-toan.update');
+    Route::delete('/thanh-toan/{id}', [App\Http\Controllers\ThanhToanAdminController::class, 'destroy'])
+        ->name('admin.thanh-toan.destroy');
+});
+
+// Admin routes for promotion management
+Route::prefix('admin')->group(function () {
+    Route::get('/khuyen-mai', [App\Http\Controllers\Admin\PromotionController::class, 'index'])
+        ->name('admin.promotions.index');
+    Route::get('/khuyen-mai/create', [App\Http\Controllers\Admin\PromotionController::class, 'create'])
+        ->name('admin.promotions.create');
+    Route::post('/khuyen-mai', [App\Http\Controllers\Admin\PromotionController::class, 'store'])
+        ->name('admin.promotions.store');
+    Route::get('/khuyen-mai/{promotion}/edit', [App\Http\Controllers\Admin\PromotionController::class, 'edit'])
+        ->name('admin.promotions.edit');
+    Route::put('/khuyen-mai/{promotion}', [App\Http\Controllers\Admin\PromotionController::class, 'update'])
+        ->name('admin.promotions.update');
+    Route::delete('/khuyen-mai/{promotion}', [App\Http\Controllers\Admin\PromotionController::class, 'destroy'])
+        ->name('admin.promotions.destroy');
+    Route::post('/khuyen-mai/{promotion}/toggle-status', [App\Http\Controllers\Admin\PromotionController::class, 'toggleStatus'])
+        ->name('admin.promotions.toggle-status');
+});
+
+
+// Check-in Routes
+Route::get('/checkin', [CheckinController::class, 'showForm'])->name('checkin.form');
+Route::post('/checkin', [CheckinController::class, 'processCheckin'])->name('checkin.process');
+Route::get('/checkin-detail/{ma_ve}', [CheckinController::class, 'showCheckinDetail'])->name('checkin.checkin-detail');
+Route::get('/checkin/select-seat/{ma_ve}', [CheckinController::class, 'selectSeatForm'])->name('checkin.select-seat');
+Route::post('/checkin/select-seat/{ma_ve}', [CheckinController::class, 'confirmSeat'])->name('checkin.confirm-seat');
+Route::get('/checkin/baggage/{ma_ve}', [CheckinController::class, 'baggage'])->name('checkin.baggage');
+
+Route::get('/checkins/baggage', [CheckinController::class, 'baggage'])->name('checkins.baggage');
+Route::get('/checkin/success/{ma_ve}', [CheckinController::class, 'checkinSuccess'])->name('checkin.success');
+Route::get('/boarding-pass/{ma_ve}', [CheckinController::class, 'showBoardingPass'])->name('boarding.pass');
+
+// Route cho trang hủy đặt chỗ
+Route::get('/checkin/cancel-booking/{ma_ve}', [CheckinController::class, 'cancelBooking'])->name('checkin.cancel-booking');
+
+// Route xử lý hủy đặt chỗ
+Route::post('/checkin/cancel-booking/{ma_ve}', [CheckinController::class, 'processCancelBooking'])->name('checkin.cancel-booking.process');
+
+// Social Login Routes
+Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
+Route::get('/auth/facebook', [SocialAuthController::class, 'redirectToFacebook'])->name('auth.facebook');
+Route::get('/auth/facebook/callback', [SocialAuthController::class, 'handleFacebookCallback']);
+
+
+Use App\Http\Controllers\PolicyController;
+// Routes cho chính sách
+Route::get('/privacy-policy', [PolicyController::class, 'privacy'])->name('privacy.policy');
+Route::get('/terms-of-service', [PolicyController::class, 'terms'])->name('terms.service');

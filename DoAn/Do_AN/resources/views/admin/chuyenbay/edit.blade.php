@@ -4,6 +4,31 @@
 <div class="container">
     <h1>Chỉnh sửa chuyến bay</h1>
 
+    @php
+        $activePromotions = $flight->getActivePromotions();
+        $hasDiscount = false;
+        $discountPercent = 0;
+        $discountedPrice = $flight->gia_ve_co_ban;
+        $applicablePromotions = collect([]);
+        
+        if ($activePromotions->isNotEmpty() && $flight->ngay_gio_khoi_hanh) {
+            $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+            foreach ($activePromotions as $promo) {
+                $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                    $applicablePromotions->push($promo);
+                    $hasDiscount = true;
+                }
+            }
+            
+            if ($hasDiscount) {
+                $discountPercent = $flight->getHighestDiscount();
+                $discountedPrice = $flight->getDiscountedPrice();
+            }
+        }
+    @endphp
+
     <form action="{{ route('admin.chuyenbay.update', $flight->id_chuyen_bay) }}" method="POST">
         @csrf
         @method('PUT')
@@ -90,6 +115,24 @@
             @error('gia_ve_co_ban')
             <div class="invalid-feedback">{{ $message }}</div>
             @enderror
+            
+            @if($hasDiscount)
+            <div class="alert alert-info mt-2">
+                <strong>Thông tin khuyến mãi đang hoạt động:</strong> 
+                <p>Giá sau giảm giá: <span class="text-danger font-weight-bold">{{ number_format($discountedPrice) }} VNĐ</span> (giảm {{ $discountPercent }}%)</p>
+                <p class="mb-0">
+                    <strong>Khuyến mãi áp dụng tại thời điểm khởi hành:</strong> 
+                    <ul class="mb-0">
+                        @foreach($applicablePromotions as $promo)
+                        <li>{{ $promo->ten_khuyen_mai }} ({{ $promo->phan_tram_giam }}%) - 
+                            <small>Từ {{ \Carbon\Carbon::parse($promo->thoi_gian_bat_dau)->format('d/m/Y H:i') }} 
+                            đến {{ \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc)->format('d/m/Y H:i') }}</small>
+                        </li>
+                        @endforeach
+                    </ul>
+                </p>
+            </div>
+            @endif
         </div>
 
         <div class="form-group">

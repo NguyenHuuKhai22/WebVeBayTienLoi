@@ -11,6 +11,28 @@
                 <div class="mb-2 md:mb-0">
                     <div class="font-semibold text-lg">{{ $flight->ma_chuyen_bay }}</div>
                     <div>{{ $flight->hangBay ? $flight->hangBay->ten_hang_bay : 'Vietnam Airlines' }}</div>
+                    @php
+                        $hasDiscount = false;
+                        $discountPercent = 0;
+                        
+                        if ($flight->ngay_gio_khoi_hanh) {
+                            $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                            foreach ($flight->getActivePromotions() as $promo) {
+                                $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                                $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                                if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                                    $hasDiscount = true;
+                                    $discountPercent = $flight->getHighestDiscount();
+                                    break;
+                                }
+                            }
+                        }
+                    @endphp
+                    @if($hasDiscount)
+                        <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mt-1">
+                            Giảm giá {{ $discountPercent }}%
+                        </div>
+                    @endif
                 </div>
                 
                 <div class="flex-1 text-center mb-2 md:mb-0">
@@ -49,6 +71,20 @@
                         </span>
                     </div>
                     <div class="font-semibold">{{ \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh)->format('d/m/Y') }}</div>
+                    <div class="mt-1">
+                        @if($hasDiscount)
+                            <div class="text-gray-500 line-through text-xs">
+                                {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-red-600 font-semibold">
+                                {{ number_format($flight->getDiscountedPrice(), 0, ',', '.') }} VND
+                            </div>
+                        @else
+                            <div class="text-teal-700 font-semibold">
+                                {{ number_format($flight->gia_ve_co_ban, 0, ',', '.') }} VND
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,16 +189,22 @@
                 <div>
                     <div class="text-gray-600">Tổng tiền:</div>
                     @if(isset($bookingDetails) && !empty($bookingDetails))
-                        @if($bookingDetails['discount'] > 0)
-                            <div class="text-2xl font-bold text-gray-500 line-through">
-                                {{ number_format($bookingDetails['total_price'], 0, ',', '.') }} VND
+                        @if($hasDiscount)
+                            <div class="text-gray-500 line-through" id="original-price">
+                                {{ number_format($bookingDetails['original_price'] ?? $bookingDetails['total_price'], 0, ',', '.') }} VND
                             </div>
-                            <div class="text-2xl font-bold text-teal-700">
-                                {{ number_format($bookingDetails['final_price'], 0, ',', '.') }} VND
+                            <div class="text-red-600 text-2xl font-bold" id="final-price">
+                                @php
+                                    $discountedPrice = $bookingDetails['original_price'] * (1 - $discountPercent/100);
+                                @endphp
+                                {{ number_format($discountedPrice, 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-sm text-gray-600" id="discount-info">
+                                Đã áp dụng giảm giá: {{ $discountPercent }}%
                             </div>
                         @else
-                            <div class="text-2xl font-bold text-teal-700">
-                                {{ number_format($bookingDetails['total_price'], 0, ',', '.') }} VND
+                            <div class="text-teal-700 text-2xl font-bold" id="final-price">
+                                {{ number_format($bookingDetails['original_price'], 0, ',', '.') }} VND
                             </div>
                         @endif
                     @endif
@@ -272,7 +314,7 @@ $(document).ready(function() {
                     }
 
                     // Cập nhật tổng tiền
-                    updateTotalPrice(response.final_price);
+                    updateTotalPrice(response.final_price, response.original_price);
                 } else {
                     handleError($input, $priceDisplay, $extraInfo, response.message);
                 }
@@ -290,11 +332,35 @@ $(document).ready(function() {
         $priceDisplay.html('Phí hành lý: Không thể tính toán');
     }
 
-    function updateTotalPrice(finalPrice) {
-        const $totalPrice = $('.text-2xl.font-bold.text-teal-700');
-        if ($totalPrice.length) {
-            $totalPrice.text(`${PRICE_FORMAT.format(finalPrice)} VND`);
+    function updateTotalPrice(finalPrice, originalPrice) {
+        // Kiểm tra xem có phần tử #original-price không (chỉ có khi có giảm giá)
+        const hasDiscount = $('#original-price').length > 0;
+        
+        if (hasDiscount) {
+            // Trường hợp có giảm giá
+            // Cập nhật giá gốc (có gạch ngang)
+            $('#original-price').text(`${PRICE_FORMAT.format(originalPrice)} VND`);
+            
+            // Cập nhật giá cuối cùng (màu đỏ)
+            $('#final-price').text(`${PRICE_FORMAT.format(finalPrice)} VND`);
+            
+            // Cập nhật thông tin giảm giá
+            const discountAmount = originalPrice - finalPrice;
+            if (discountAmount > 0) {
+                const discountPercent = Math.round((discountAmount / originalPrice) * 100);
+                $('#discount-info').text(`Đã áp dụng giảm giá: ${discountPercent}%`);
+                $('#discount-info').removeClass('hidden');
+            }
+        } else {
+            // Trường hợp không có giảm giá
+            // Trong trường hợp không có giảm giá, originalPrice là giá vé cơ bản + phí hành lý
+            // và finalPrice sẽ bằng originalPrice (vì không có giảm giá)
+            // Nên chỉ cần dùng một trong hai giá trị này để hiển thị
+            $('#final-price').text(`${PRICE_FORMAT.format(originalPrice)} VND`);
         }
+        
+        // Log để debug
+        console.log(`Cập nhật giá: Gốc=${originalPrice}, Sau giảm=${finalPrice}, Giảm=${originalPrice - finalPrice}`);
     }
 });
 </script>

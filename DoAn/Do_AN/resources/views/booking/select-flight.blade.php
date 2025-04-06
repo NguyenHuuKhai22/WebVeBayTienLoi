@@ -11,6 +11,28 @@
                 <div class="mb-2 md:mb-0">
                     <div class="font-semibold text-lg">{{ $flight->ma_chuyen_bay }}</div>
                     <div>{{ $flight->hangBay ? $flight->hangBay->ten_hang_bay : 'Vietnam Airlines' }}</div>
+                    @php
+                        $hasDiscount = false;
+                        $discountPercent = 0;
+                        
+                        if ($flight->ngay_gio_khoi_hanh) {
+                            $departureTime = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                            foreach ($flight->getActivePromotions() as $promo) {
+                                $startTime = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                                $endTime = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                                if ($promo->trang_thai && $departureTime->between($startTime, $endTime)) {
+                                    $hasDiscount = true;
+                                    $discountPercent = $flight->getHighestDiscount();
+                                    break;
+                                }
+                            }
+                        }
+                    @endphp
+                    @if($hasDiscount)
+                        <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mt-1">
+                            Giảm giá {{ $discountPercent }}%
+                        </div>
+                    @endif
                 </div>
 
                 <div class="flex-1 text-center mb-2 md:mb-0">
@@ -55,11 +77,21 @@
                     @foreach($seatTypes as $key => $type)
                     <div class="border rounded-lg p-4 hover:shadow-md transition cursor-pointer seat-option"
                         data-type="{{ $key }}"
-                        data-price="{{ $flight->gia_ve_co_ban * $type['price_factor'] }}">
+                        data-price="{{ $flight->gia_ve_co_ban * $type['price_factor'] }}"
+                        data-discount="{{ $hasDiscount ? $discountPercent : 0 }}">
                         <div class="font-semibold text-lg mb-2">{{ $type['name'] }}</div>
-                        <div class="text-teal-700 font-bold text-xl mb-2">
-                            {{ number_format($flight->gia_ve_co_ban * $type['price_factor'], 0, ',', '.') }} VND
-                        </div>
+                        @if($hasDiscount)
+                            <div class="text-gray-500 line-through text-sm">
+                                {{ number_format($flight->gia_ve_co_ban * $type['price_factor'], 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-red-600 font-bold text-xl mb-2">
+                                {{ number_format($flight->gia_ve_co_ban * $type['price_factor'] * (1 - $discountPercent/100), 0, ',', '.') }} VND
+                            </div>
+                        @else
+                            <div class="text-teal-700 font-bold text-xl mb-2">
+                                {{ number_format($flight->gia_ve_co_ban * $type['price_factor'], 0, ',', '.') }} VND
+                            </div>
+                        @endif
                         <div class="text-sm text-gray-600">Giá cho 1 hành khách</div>
                         <div class="mt-4">
                             <input type="radio" name="seat_type" id="seat_{{ $key }}" value="{{ $key }}" class="hidden seat-radio">
@@ -76,9 +108,24 @@
             <div class="text-center mt-8">
                 <div class="mb-4">
                     <div class="text-gray-600">Tổng tiền cho {{ $soHanhKhach }} hành khách:</div>
-                    <div class="text-2xl font-bold text-teal-700" id="total-price">
-                        {{ number_format($flight->gia_ve_co_ban * $soHanhKhach, 0, ',', '.') }} VND
-                    </div>
+                    @if($hasDiscount)
+                        <div class="text-gray-500 line-through">
+                            <span id="original-total-price">{{ number_format($flight->gia_ve_co_ban * $soHanhKhach, 0, ',', '.') }}</span> VND
+                        </div>
+                        <div class="text-2xl font-bold text-red-600" id="total-price">
+                            {{ number_format($flight->gia_ve_co_ban * $soHanhKhach * (1 - $discountPercent/100), 0, ',', '.') }} VND
+                        </div>
+                        <div class="text-sm text-gray-600" id="discount-info">
+                            Đã áp dụng giảm giá: {{ $discountPercent }}%
+                        </div>
+                    @else
+                        <div class="text-2xl font-bold text-teal-700" id="total-price">
+                            {{ number_format($flight->gia_ve_co_ban * $soHanhKhach, 0, ',', '.') }} VND
+                        </div>
+                        <div class="text-sm text-gray-600" id="discount-info" style="display: none;">
+                            Đã áp dụng giảm giá: 0%
+                        </div>
+                    @endif
                 </div>
 
                 <button type="submit" class="bg-teal-700 text-white py-2 px-6 rounded-md hover:bg-teal-800 transition">
@@ -88,7 +135,6 @@
         </form>
     </div>
 </div>
-
 
 @endsection
 @section('scripts')

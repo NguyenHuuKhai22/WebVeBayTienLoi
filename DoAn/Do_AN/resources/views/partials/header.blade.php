@@ -38,34 +38,52 @@
                 <div class="flex items-center space-x-4">
                     @auth
                     <div class="flex items-center space-x-4">
-                        <a href="{{ route('nguoidung.show', Auth::user()->id_nguoi_dung) }}" 
-                        class="text-gray-600 hover:text-[#0f766e] transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap" data-translate="Chào">
+                        <!-- 👤 Tên người dùng là nút mở dropdown -->
+                        <a href="javascript:void(0)" 
+                        id="userDropdownButton"
+                        class="text-gray-600 hover:text-[#0f766e] transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap flex items-center"
+                        data-translate="Chào">
                             <span class="hidden lg:inline">{{ __('Chào') }}, {{ Auth::user()->ho_ten }}</span>
                             <span class="lg:hidden">{{ Auth::user()->ho_ten }}</span>
+                            <!-- Mũi tên chỉ hướng -->
+                            <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </a>
-                        <form action="{{ route('logout') }}" method="POST" class="inline-block" id="logout-form">
-                            @csrf
-                            <button class="text-gray-600 hover:text-red-500 transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap">
-                                <span class="hidden lg:inline">ĐĂNG XUẤT</span>
-                                <i class="fas fa-sign-out-alt lg:hidden"></i>
-                            </button>
-                        </form>
+
+                    </div>
+
+                    <!-- 🔽 Dropdown menu -->
+                    <div class="relative">
+                        <div id="userDropdownMenu"
+                            class="hidden absolute right-0 mt-2 bg-white border rounded-lg shadow-md w-48 z-50">
+                            <a href="{{ route('nguoidung.show', Auth::user()->id_nguoi_dung) }}"
+                            class="block px-4 py-2 text-gray-700 hover:bg-gray-100">👤 Thông tin cá nhân</a>
+                            <a href="{{ route('user.tickets') }}"
+                            class="block px-4 py-2 text-gray-700 hover:bg-gray-100">🎫 Danh sách vé</a>
+                            <form action="{{ route('logout') }}" method="POST" class="block">
+                                @csrf
+                                <button class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">🚪 Đăng xuất</button>
+                            </form>
+                        </div>
                     </div>
                     @else
                     <div class="flex items-center space-x-4">
-                        <a href="{{ route('login') }}" class="text-gray-600 hover:text-[#0f766e] transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap">
+                        <a href="{{ route('login') }}"
+                        class="text-gray-600 hover:text-[#0f766e] transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap">
                             <span class="hidden lg:inline">ĐĂNG NHẬP</span>
                             <i class="fas fa-sign-in-alt lg:hidden"></i>
                         </a>
-                        <a href="{{ route('register') }}" class="bg-[#0f766e] text-white px-4 py-2 rounded-full hover:bg-[#0d6b63] transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap">
+                        <a href="{{ route('register') }}"
+                        class="bg-[#0f766e] text-white px-4 py-2 rounded-full hover:bg-[#0d6b63] transition duration-300 ease-in-out transform hover:scale-105 whitespace-nowrap">
                             <span class="hidden lg:inline">ĐĂNG KÝ</span>
                             <i class="fas fa-user-plus lg:hidden"></i>
                         </a>
                     </div>
                     @endauth
                 </div>
-            </div>
-        </div>
 
         <!-- Mobile Navigation Menu -->
         <div class="lg:hidden flex overflow-x-auto py-2 no-scrollbar">
@@ -129,6 +147,23 @@
             }
         } catch (error) {
             console.log("Could not highlight current language flag:", error);
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropdownBtn = document.getElementById('userDropdownButton');
+        const dropdownMenu = document.getElementById('userDropdownMenu');
+
+        if (dropdownBtn && dropdownMenu) {
+            dropdownBtn.addEventListener('click', function () {
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Ẩn dropdown khi click ra ngoài
+            document.addEventListener('click', function (event) {
+                if (!dropdownBtn.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
         }
     });
 </script>

@@ -15,10 +15,16 @@ class VeMayBay extends Model
         'ma_ve',
         'loai_ghe',
         'gia_ve',
+         'khoi_luong_dang_ky',
+        'phi_hanh_ly',
         'ngay_dat',
         'trang_thai',
-        'id_thanh_toan' // Đảm bảo cột này có trong fillable
+        'id_thanh_toan',
+       
     ];
+
+    // Đảm bảo eager loading các relationship
+    protected $with = ['chuyenBay', 'nguoiDung'];
 
     public function nguoiDung()
     {

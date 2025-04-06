@@ -31,34 +31,5 @@
         </div>
     </div>
 
-    <!-- Danh sách vé máy bay -->
-    <div class="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto mt-8">
-        <h1 class="text-3xl font-bold text-teal-700 mb-6 text-center">Danh sách vé máy bay</h1>
-
-        @if(isset($flights) && $flights->count() > 0)
-            <div class="grid grid-cols-1 gap-4">
-                @foreach($flights as $flight)
-                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between">
-                        <div class="flex-1">
-                            <p class="font-bold text-lg">Mã Vé: {{ $flight->ma_ve }}</p>
-                            <p class="text-gray-700">Hạng Ghế: {{ $flight->loai_ghe }}</p>
-                            <p class="text-gray-700">Giá Vé: <span class="font-semibold text-teal-700">{{ number_format($flight->gia_ve, 0, ',', '.') }} VND</span></p>
-                            <p class="text-gray-700">Ngày Đặt: {{ \Carbon\Carbon::parse($flight->ngay_dat)->format('d/m/Y') }}</p>
-                            <p class="text-gray-700">Trạng Thái:
-<span class="{{ $flight->trang_thai == 'Đã Thanh Toán' ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $flight->trang_thai }}
-                                </span>
-                            </p>
-                        </div>
-                        
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <div class="text-center py-8">
-                <p class="text-gray-600">Bạn chưa đặt vé nào.</p>
-            </div>
-        @endif
-    </div>
-</div>
+    
 @endsection

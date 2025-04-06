@@ -36,6 +36,24 @@
                 @php
                     $destination = Str($flight->diem_den, '_');
                     $imagePath = asset("img/{$destination}_1.jpg");
+                    
+                    $hasDiscount = false;
+                    $discountedPrice = $flight->gia_ve_co_ban;
+                    $discountPercent = 0;
+                    
+                    if ($flight->ngay_gio_khoi_hanh) {
+                        $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                        foreach ($flight->getActivePromotions() as $promo) {
+                            $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                            $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                            if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                                $hasDiscount = true;
+                                $discountPercent = $flight->getHighestDiscount();
+                                $discountedPrice = $flight->getDiscountedPrice();
+                                break;
+                            }
+                        }
+                    }
                 @endphp
 
                 <a href="{{ route('booking.select-passengers', ['flight_id' => $flight->id_chuyen_bay]) }}" class="block">
@@ -48,6 +66,12 @@
                             <div class="absolute top-0 left-0 bg-black bg-opacity-50 text-white p-2 rounded-br-lg">
                                 {{ $index + 1 }}/{{ $flights->total() }}
                             </div>
+
+                            @if($hasDiscount)
+                            <div class="absolute top-0 right-0 bg-red-600 text-white p-2 rounded-bl-lg">
+                                -{{ $discountPercent }}%
+                            </div>
+                            @endif
 
                             <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
@@ -63,9 +87,20 @@
                             <div class="flex justify-between items-center">
                                 <div>
                                     <p class="text-sm text-gray-500">From</p>
+                                    @if($hasDiscount)
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500 line-through">
+                                            VND {{ number_format($flight->gia_ve_co_ban) }}
+                                        </p>
+                                        <p class="text-xl font-bold text-red-600">
+                                            VND {{ number_format($discountedPrice) }}
+                                        </p>
+                                    </div>
+                                    @else
                                     <p class="text-xl font-bold text-teal-700">
                                         VND {{ number_format($flight->gia_ve_co_ban) }}
                                     </p>
+                                    @endif
                                 </div>
                                 <div class="text-right">
                                     <p class="text-sm text-gray-500">Available</p>

@@ -34,7 +34,37 @@
                         <td>{{ $flight->diem_den }}</td>
                         <td>{{ $flight->ngay_gio_khoi_hanh }}</td>
                         <td>{{ $flight->ngay_gio_den }}</td>
-                        <td>{{ number_format($flight->gia_ve_co_ban) }} VNĐ</td>
+                        <td>
+                            @php
+                                $activePromotions = $flight->getActivePromotions();
+                                $hasDiscount = false;
+                                $discountPercent = 0;
+                                
+                                if ($activePromotions->isNotEmpty() && $flight->ngay_gio_khoi_hanh) {
+                                    $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                                    foreach ($activePromotions as $promo) {
+                                        $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                                        $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                                        if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                                            $hasDiscount = true;
+                                            $discountPercent = $flight->getHighestDiscount();
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @if($hasDiscount)
+                                <div class="text-decoration-line-through text-muted">
+                                    {{ number_format($flight->gia_ve_co_ban) }} VNĐ
+                                </div>
+                                <div class="text-danger">
+                                    {{ number_format($flight->getDiscountedPrice()) }} VNĐ
+                                    <span class="badge bg-danger text-white">-{{ $discountPercent }}%</span>
+                                </div>
+                            @else
+                                {{ number_format($flight->gia_ve_co_ban) }} VNĐ
+                            @endif
+                        </td>
                         <td>{{ $flight->so_ghe_trong }}</td>
                         <td>{{ $flight->hangBay->ten_hang_bay }}</td>
                         <td>

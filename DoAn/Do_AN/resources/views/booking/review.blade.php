@@ -14,6 +14,28 @@
                     <div class="mb-2 md:mb-0">
                         <div class="font-semibold text-lg">{{ $flight->ma_chuyen_bay }}</div>
                         <div>{{ $flight->hangBay ? $flight->hangBay->ten_hang_bay : 'Vietnam Airlines' }}</div>
+                        @php
+                            $hasDiscount = false;
+                            $discountPercent = 0;
+                            
+                            if ($flight->ngay_gio_khoi_hanh) {
+                                $thoiGianKhoiHanh = \Carbon\Carbon::parse($flight->ngay_gio_khoi_hanh);
+                                foreach ($flight->getActivePromotions() as $promo) {
+                                    $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
+                                    $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
+                                    if ($promo->trang_thai && $thoiGianKhoiHanh->between($thoiGianBatDau, $thoiGianKetThuc)) {
+                                        $hasDiscount = true;
+                                        $discountPercent = $flight->getHighestDiscount();
+                                        break;
+                                    }
+                                }
+                            }
+                        @endphp
+                        @if($hasDiscount)
+                            <div class="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold mt-1">
+                                Giảm giá {{ $discountPercent }}%
+                            </div>
+                        @endif
                     </div>
 
                     <div class="flex-1 text-center mb-2 md:mb-0">
@@ -121,10 +143,18 @@
                 </div>
 
                 <!-- Giảm giá nếu có -->
-                <div id="discount-section" class="{{ isset($bookingDetails['discount']) && $bookingDetails['discount'] > 0 ? '' : 'hidden' }} flex justify-between items-start text-green-600">
+                <div id="discount-section" class="{{ (isset($bookingDetails['discount']) && $bookingDetails['discount'] > 0) ? '' : 'hidden' }} flex justify-between items-start text-green-600">
                     <div>
                         <div class="font-medium">Giảm giá</div>
-                        <div class="text-sm">Mã: <span id="discount-code-display">{{ $bookingDetails['discount_code'] ?? '' }}</span></div>
+                        <div class="text-sm discount-details">
+                            @if(isset($bookingDetails['flight_discount']) && $bookingDetails['flight_discount'] > 0)
+                                <div>Khuyến mãi chuyến bay: -{{ number_format($bookingDetails['flight_discount'], 0, ',', '.') }} VND</div>
+                            @endif
+                            
+                            @if(isset($bookingDetails['discount_code']) && $bookingDetails['discount_code'])
+                                <div>Mã giảm giá ({{ $bookingDetails['discount_code'] }}): -{{ number_format($bookingDetails['code_discount'], 0, ',', '.') }} VND</div>
+                            @endif
+                        </div>
                     </div>
                     <div class="font-medium" id="discount-amount">-{{ number_format($bookingDetails['discount'] ?? 0, 0, ',', '.') }} VND</div>
                 </div>
@@ -136,9 +166,22 @@
                 </div>
 
                 <!-- Tổng tiền cuối cùng -->
-                <div class="flex justify-between items-center pt-3 border-t border-gray-200 text-lg font-bold text-teal-700">
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200 text-lg font-bold">
                     <div>Tổng tiền thanh toán</div>
-                    <div id="final-price">{{ number_format($bookingDetails['final_price'], 0, ',', '.') }} VND</div>
+                    @if((isset($bookingDetails['discount']) && $bookingDetails['discount'] > 0) && $hasDiscount)
+                        <div>
+                            <div class="text-gray-500 line-through">
+                                {{ number_format($bookingDetails['total_price'], 0, ',', '.') }} VND
+                            </div>
+                            <div class="text-red-600" id="final-price">
+                                {{ number_format($bookingDetails['final_price'], 0, ',', '.') }} VND
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-teal-700" id="final-price">
+                            {{ number_format($bookingDetails['total_price'], 0, ',', '.') }} VND
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -212,7 +255,13 @@
 
                 <button type="submit" class="bg-teal-700 text-white py-2 px-6 rounded-md hover:bg-teal-800 transition"
                     id="payment-button">
-                    Thanh toán <span id="payment-amount">{{ number_format($bookingDetails['final_price'] ?? $bookingDetails['total_price'], 0, ',', '.') }}</span> VND
+                    Thanh toán <span id="payment-amount">
+                        @if($hasDiscount || (isset($bookingDetails['discount']) && $bookingDetails['discount'] > 0))
+                            {{ number_format($bookingDetails['final_price'], 0, ',', '.') }}
+                        @else
+                            {{ number_format($bookingDetails['total_price'], 0, ',', '.') }}
+                        @endif
+                    </span> VND
                 </button>
 
             </div>
@@ -230,6 +279,7 @@
                         method: 'POST',
                         data: {
                             discount_code: discountCode,
+                            flight_id: '{{ $flight->id }}',
                             _token: '{{ csrf_token() }}'
                         },
                         success: function(response) {
@@ -237,15 +287,41 @@
                                 // Cập nhật giao diện
                                 if (response.discount > 0) {
                                     $('#discount-section').removeClass('hidden');
-                                    $('#discount-code-display').text(discountCode);
+                                    
+                                    // Xây dựng thông tin chi tiết giảm giá
+                                    let discountDetailsHTML = '';
+                                    
+                                    // Hiển thị giảm giá từ chuyến bay
+                                    if (response.flight_discount > 0) {
+                                        discountDetailsHTML += '<div>Khuyến mãi chuyến bay: -' + 
+                                            response.flight_discount.toLocaleString('vi-VN') + ' VND</div>';
+                                    }
+                                    
+                                    // Hiển thị giảm giá từ mã giảm giá
+                                    if (response.code_discount > 0) {
+                                        discountDetailsHTML += '<div>Mã giảm giá (' + discountCode + '): -' + 
+                                            response.code_discount.toLocaleString('vi-VN') + ' VND</div>';
+                                    }
+                                    
+                                    // Cập nhật khu vực hiển thị chi tiết giảm giá
+                                    $('.discount-details').html(discountDetailsHTML);
+                                    
+                                    // Cập nhật tổng giảm giá
                                     $('#discount-amount').text('-' + response.discount.toLocaleString('vi-VN') + ' VND');
+                                    
+                                    // Hiển thị giá gốc và giá đã giảm
+                                   // To this (only showing the final price):
+                                    $('#final-price').html('<div class="text-red-600">' + 
+                                        response.final_price.toLocaleString('vi-VN') + ' VND</div>');
                                 } else {
                                     $('#discount-section').addClass('hidden');
+                                    $('#final-price').html(response.final_price.toLocaleString('vi-VN') + ' VND');
+                                    $('#final-price').removeClass('text-red-600').addClass('text-teal-700');
                                 }
+                                
                                 // Cập nhật giá trong nút thanh toán
                                 $('#payment-amount').text(response.final_price.toLocaleString('vi-VN'));
-                                $('#final-price').text(response.final_price.toLocaleString('vi-VN') + ' VND');
-                                $('#discount-message').text(response.message).removeClass('text-red-600').addClass('text-green-600');
+                                $('#discount-message').html(response.message).removeClass('text-red-600').addClass('text-green-600');
                             } else {
                                 $('#discount-message').text(response.message).removeClass('text-green-600').addClass('text-red-600');
                             }
