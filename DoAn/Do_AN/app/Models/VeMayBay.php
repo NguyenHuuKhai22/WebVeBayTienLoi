@@ -14,6 +14,7 @@ class VeMayBay extends Model
         'id_chuyen_bay',
         'ma_ve',
         'loai_ghe',
+        'so_ghe',
         'gia_ve',
          'khoi_luong_dang_ky',
         'phi_hanh_ly',

@@ -22,7 +22,7 @@ class DashboardController extends Controller
 
         // Thống kê tổng quan
         $totalUsers = NguoiDung::count();
-        $totalFlightsToday = ChuyenBay::whereDate('ngay_gio_khoi_hanh', Carbon::today())->count();
+        $totalFlightsToday = ThanhToan::whereDate('ngay_thanh_toan', Carbon::today())->count();
         $totalTickets = VeMayBay::count();
         $totalRevenue = ThanhToan::where('trang_thai', 'thanh_cong')->sum('so_tien');
 
@@ -61,10 +61,13 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        // Đặt vé gần đây
-        $recentBookings = VeMayBay::with(['nguoiDung', 'chuyenBay', 'thanhToan'])
-            ->whereHas('thanhToan')
-            ->latest('ngay_dat')
+        // Đặt vé gần đây - lấy từ bảng thanh_toan và sử dụng trường so_tien
+        $recentBookings = ThanhToan::with('veMayBay.nguoiDung', 'veMayBay.chuyenBay')
+            ->whereHas('veMayBay', function($query) {
+                $query->whereHas('nguoiDung')
+                      ->whereHas('chuyenBay');
+            })
+            ->latest('ngay_thanh_toan')
             ->limit(5)
             ->get();
 

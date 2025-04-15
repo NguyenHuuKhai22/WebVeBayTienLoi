@@ -19,7 +19,9 @@ class ChuyenBay extends Model
         'ngay_gio_den',
         'gia_ve_co_ban',
         'so_ghe_trong',
-        'id_hang_bay'
+      
+        'id_hang_bay',
+       
     ];
     protected $dates = ['ngay_gio_khoi_hanh', 'ngay_gio_den', 'deleted_at']; // Thêm vào đây
     public function hangBay()

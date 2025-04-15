@@ -8,7 +8,7 @@
         <div class="flex flex-col md:flex-row items-center md:items-start md:space-x-6">
             <!-- Ảnh đại diện -->
             <div class="flex-shrink-0">
-                <img src="{{ auth()->user()->avatar ?? asset('images/default-avatar.png') }}" 
+                <img src="{{ auth()->user()->avatar ?? asset('img/default-avatar.png') }}" 
                      alt="Ảnh đại diện" 
                      class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-teal-500 shadow-md object-cover">
             </div>

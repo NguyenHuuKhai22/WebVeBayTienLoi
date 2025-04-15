@@ -85,10 +85,10 @@
 
        <section class="bg-teal-700 py-4">
            <div class="container mx-auto flex justify-center space-x-4">
-               <a href="http://127.0.0.1:8000/search" class="inline-block bg-teal-800 text-white py-2 px-4 rounded hover:bg-teal-900 transition-colors">
+               <a href="http://localhost:8000/search" class="inline-block bg-teal-800 text-white py-2 px-4 rounded hover:bg-teal-900 transition-colors">
                {{ __('MUA VÉ') }}
                </a>
-               <a href="http://127.0.0.1:8000/checkin" class="inline-block bg-teal-800 text-white py-2 px-4 rounded hover:bg-teal-900 transition-colors">
+               <a href="http://localhost:8000/checkin" class="inline-block bg-teal-800 text-white py-2 px-4 rounded hover:bg-teal-900 transition-colors">
                 {{ __('QUẢN LÝ ĐẶT CHỖ') }}
                 </a>
                <button class="bg-teal-800 text-white py-2 px-4 rounded">{{ __(key: 'LÀM THỦ TỤC') }}

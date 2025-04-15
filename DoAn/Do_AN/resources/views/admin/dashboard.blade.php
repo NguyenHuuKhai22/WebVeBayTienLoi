@@ -112,7 +112,7 @@
                                     <th>ID</th>
                                     <th>Khách hàng</th>
                                     <th>Chuyến bay</th>
-                                    <th>Ngày</th>
+                                    <th>Ngày thanh toán</th>
                                     <th>Trạng thái</th>
                                     <th>Giá</th>
                                 </tr>
@@ -120,11 +120,12 @@
                             <tbody>
                                 @foreach($recentBookings as $booking)
                                 <tr class="align-middle">
-                                    <td>#{{ $booking->id_ve }}</td>
+                                    <td>#{{ $booking->id_thanh_toan }}</td>
                                     <td>
+                                        @if($booking->veMayBay->isNotEmpty() && $booking->veMayBay->first()->nguoiDung)
                                         <div class="d-flex align-items-center">
                                             @php
-                                                $initials = collect(explode(' ', $booking->nguoiDung->ho_ten))
+                                                $initials = collect(explode(' ', $booking->veMayBay->first()->nguoiDung->ho_ten))
                                                     ->map(function($word) { return substr($word, 0, 1); })
                                                     ->take(2)
                                                     ->join('');
@@ -132,43 +133,27 @@
                                             <div class="avatar-sm me-2 bg-primary text-white rounded-circle">
                                                 {{ $initials }}
                                             </div>
-                                            <div>{{ $booking->nguoiDung->ho_ten }}</div>
+                                            <div>{{ $booking->veMayBay->first()->nguoiDung->ho_ten }}</div>
                                         </div>
+                                        @else
+                                        <span class="text-muted">Không có thông tin</span>
+                                        @endif
                                     </td>
-                                    <td>{{ $booking->chuyenBay->diem_di }} - {{ $booking->chuyenBay->diem_den }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($booking->ngay_dat)->format('d/m/Y') }}</td>
                                     <td>
-                                        <span class="badge {{ $booking->trang_thai === 'đã thanh toán' ? 'bg-success' : 'bg-warning' }}">
+                                        @if($booking->veMayBay->isNotEmpty() && $booking->veMayBay->first()->chuyenBay)
+                                        {{ $booking->veMayBay->first()->chuyenBay->diem_di }} - {{ $booking->veMayBay->first()->chuyenBay->diem_den }}
+                                        @else
+                                        <span class="text-muted">Không có thông tin</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ \Carbon\Carbon::parse($booking->ngay_thanh_toan)->format('d/m/Y') }}</td>
+                                    <td>
+                                        <span class="badge {{ $booking->trang_thai === 'thanh_cong' ? 'bg-success' : 'bg-warning' }}">
                                             {{ ucfirst($booking->trang_thai) }}
                                         </span>
                                     </td>
                                     <td>
-                                        @php
-                                            $isOnSale = false;
-                                            if ($booking->chuyenBay && $booking->ngay_dat) {
-                                                $ngayDat = \Carbon\Carbon::parse($booking->ngay_dat);
-                                                foreach ($booking->chuyenBay->promotions as $promo) {
-                                                    $thoiGianBatDau = \Carbon\Carbon::parse($promo->thoi_gian_bat_dau);
-                                                    $thoiGianKetThuc = \Carbon\Carbon::parse($promo->thoi_gian_ket_thuc);
-                                                    if ($promo->trang_thai && $ngayDat->between($thoiGianBatDau, $thoiGianKetThuc)) {
-                                                        $isOnSale = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        @endphp
-                                        
-                                        @if($isOnSale)
-                                            <div class="text-decoration-line-through text-muted small">
-                                                {{ number_format($booking->chuyenBay->gia_ve_co_ban, 0, ',', '.') }} VNĐ
-                                            </div>
-                                            <div class="text-danger">
-                                                {{ number_format($booking->gia_ve, 0, ',', '.') }} VNĐ
-                                                <span class="badge bg-danger text-white">-{{ $booking->chuyenBay->getHighestDiscount() }}%</span>
-                                            </div>
-                                        @else
-                                            {{ number_format($booking->gia_ve, 0, ',', '.') }} VNĐ
-                                        @endif
+                                        {{ number_format($booking->so_tien, 0, ',', '.') }} VNĐ
                                     </td>
                                 </tr>
                                 @endforeach

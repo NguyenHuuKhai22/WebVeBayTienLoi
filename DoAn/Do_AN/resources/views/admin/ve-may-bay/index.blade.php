@@ -66,7 +66,7 @@
                                                     }
                                                 }
                                             @endphp
-                                            
+<!--                                             
                                             @if($isOnSale)
                                                 <div class="text-decoration-line-through text-muted">
                                                     {{ number_format($ticket->chuyenBay->gia_ve_co_ban) }} VNĐ
@@ -75,9 +75,10 @@
                                                     {{ number_format($ticket->gia_ve) }} VNĐ
                                                     <span class="badge bg-danger text-white">-{{ $ticket->chuyenBay->getHighestDiscount() }}%</span>
                                                 </div>
-                                            @else
-                                                {{ number_format($ticket->gia_ve) }} VNĐ
-                                            @endif
+                                            @else -->
+                                                
+                                            <!-- @endif -->
+                                            {{ number_format($ticket->gia_ve) }} VNĐ
                                         </td>
                                         <td>{{ $ticket->khoi_luong_dang_ky ?? 0 }} kg</td>
                                         <td>{{ number_format($ticket->phi_hanh_ly ?? 0) }} VNĐ</td>

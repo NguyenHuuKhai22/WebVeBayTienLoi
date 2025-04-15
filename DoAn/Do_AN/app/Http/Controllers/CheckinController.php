@@ -148,7 +148,8 @@ class CheckinController extends Controller
             return redirect()->route('checkin.form')->withErrors(['message' => 'Vé không tồn tại!']);
         }
 
-        // Hủy đặt chỗ nhưng giữ lại vé
+        // Hủy đặt chỗ bằng cách reset số ghế và set loại ghế về phổ thông
+        $ve->loai_ghe = 'pho_thong';
         $ve->so_ghe = null;
         $ve->save();
 

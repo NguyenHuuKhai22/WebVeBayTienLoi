@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB; // Add this line
 
 class MoMoPaymentController extends Controller
 {
-
+    //khai bao key MOMO
     private $partnerCode = "MOMOOJOI20210710";
     private $accessKey = "iPXneGmrJH0G8FOP";
     private $secretKey = "sFcbSGRSJjwGxwhhcEktCHWYUuTuPNDB";
@@ -25,13 +25,14 @@ class MoMoPaymentController extends Controller
         $this->accessKey = env('MOMO_ACCESS_KEY');
         $this->secretKey = env('MOMO_SECRET_KEY');
     }
+    //tao don hang 
     public function createPayment(Request $request)
     {
         $bookingDetails = session('booking_details');
         if (!$bookingDetails) {
             return redirect()->route('flights.search')->with('error', 'Phiên đặt vé đã hết hạn');
         }
-
+        //tao orderId va requestId
         $orderId = time() . "_" . Str::random(6);
         $requestId = time() . "_" . Str::random(6);
         $amount = $bookingDetails['final_price']; // Sử dụng final_price
@@ -40,6 +41,7 @@ class MoMoPaymentController extends Controller
         $ipnUrl = route('momo.notify');
         $extraData = base64_encode(json_encode($bookingDetails));
 
+        //tao signature
         $rawHash = "accessKey=" . $this->accessKey .
             "&amount=" . $amount .
             "&extraData=" . $extraData .
@@ -52,7 +54,7 @@ class MoMoPaymentController extends Controller
             "&requestType=captureWallet";
 
         $signature = hash_hmac("sha256", $rawHash, $this->secretKey);
-
+        //tao data
         $data = [
             'partnerCode' => $this->partnerCode,
             'partnerName' => "Vietnam Airlines",
@@ -68,7 +70,7 @@ class MoMoPaymentController extends Controller
             'extraData' => $extraData,
             'signature' => $signature
         ];
-
+        //goi api tao don hang
         $response = $this->execPostRequest($this->endpoint, json_encode($data));
         $result = json_decode($response, true);
 
@@ -77,11 +79,12 @@ class MoMoPaymentController extends Controller
         }
         return redirect()->back()->with('error', 'Không thể tạo thanh toán MoMo');
     }
-
+    //callback
     public function callback(Request $request)
     {
+        
         $response = $request->all();
-
+        //kiem tra ket qua thanh toan
         if ($response['resultCode'] == 0) {
             $bookingDetails = json_decode(base64_decode($response['extraData']), true);
             $tickets = $this->saveBooking($bookingDetails, $response);
@@ -98,8 +101,9 @@ class MoMoPaymentController extends Controller
 
     public function notify(Request $request)
     {
+        //lay ket qua thanh toan
         $response = $request->all();
-
+        //tao signature
         $rawHash = "accessKey=" . $this->accessKey .
             "&amount=" . $response['amount'] .
             "&extraData=" . $response['extraData'] .
@@ -219,13 +223,18 @@ class MoMoPaymentController extends Controller
             throw $e;
         }
     }
-
+    //goi api
     private function execPostRequest($url, $data)
     {
+        //khai bao url
         $ch = curl_init($url);
+        //khai bao method
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        //khai bao data
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        //khai bao return
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        //khai bao header
         curl_setopt(
             $ch,
             CURLOPT_HTTPHEADER,
@@ -234,11 +243,15 @@ class MoMoPaymentController extends Controller
                 'Content-Length: ' . strlen($data)
             )
         );
+        //khai bao timeout
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        //khai bao connect timeout
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-
+        //thuc thi api
         $result = curl_exec($ch);
+        //dong ket noi
         curl_close($ch);
+        //tra ve ket qua    
         return $result;
     }
 }

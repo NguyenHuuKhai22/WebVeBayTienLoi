@@ -24,8 +24,10 @@ class FlightController extends Controller
     /**
      * Search for flights based on criteria
      */
+    
     public function searchFlights(Request $request)
     {
+
         $request->validate([
             'diem_di' => 'required|string',
             'diem_den' => 'required|string',

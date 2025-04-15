@@ -50,7 +50,9 @@
                         <div class="mb-4 md:mb-0">
                             <div class="flex items-center mb-2">
                                 @if($flight->hangBay && $flight->hangBay->logo)
-                                    <img src="{{ $flight->hangBay->logo }}" alt="{{ $flight->hangBay->ten_hang_bay }}" class="h-8 mr-2">
+                                
+                                <img src="{{ asset('uploads/logos/' . $flight->hangBay->logo) }}" alt="{{ $flight->hangBay->ten_hang_bay }}"   class="h-8 mr-2" style="max-width: 100px;">
+                                    
                                 @endif
                                 <span class="font-semibold">{{ $flight->hangBay ? $flight->hangBay->ten_hang_bay : 'Vietnam Airlines' }}</span>
                             </div>

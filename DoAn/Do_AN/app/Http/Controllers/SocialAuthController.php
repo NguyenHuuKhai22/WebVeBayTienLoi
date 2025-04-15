@@ -36,7 +36,11 @@ class SocialAuthController extends Controller
 
             Auth::login($user);
 
-            return redirect()->route('vietnam-airlines');
+            // Clear any existing session data
+            session()->forget(['error', 'warning']);
+            
+            // Redirect to home page with success message
+            return redirect()->route('vietnam-airlines')->with('success', 'Đăng nhập thành công!');
         } catch (\Exception $e) {
             return redirect()->route('login')->with('error', 'Đăng nhập bằng Google thất bại!');
         }
@@ -67,7 +71,11 @@ class SocialAuthController extends Controller
 
             Auth::login($user);
 
-            return redirect()->route('vietnam-airlines');
+            // Clear any existing session data
+            session()->forget(['error', 'warning']);
+            
+            // Redirect to home page with success message
+            return redirect()->route('vietnam-airlines')->with('success', 'Đăng nhập thành công!');
         } catch (\Exception $e) {
             return redirect()->route('login')->with('error', 'Đăng nhập bằng Facebook thất bại!');
         }

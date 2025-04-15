@@ -233,7 +233,7 @@ class BookingController extends Controller
 
             if ($coupon) {
                 // Kiểm tra xem mã có thuộc về người dùng hiện tại không
-                if ($coupon->user_id && (!$user || $coupon->user_id != $user->id)) {
+                if ($coupon->user_id && (!$user || $coupon->user_id != $user->id_nguoi_dung)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Mã giảm giá này không thuộc về bạn hoặc bạn chưa đăng nhập.'
@@ -322,6 +322,8 @@ class BookingController extends Controller
     /**
      * Show the passenger selection page
      */
+
+     // mua truc tiep
     public function selectPassengers($flight_id)
     {
         // Check if user is authenticated
